@@ -31,5 +31,9 @@ You will then be asked how many recent activities you wish to download. The scri
 ### Subsequent Runs
 The garth library securely saves your session token in a hidden directory in your user profile (~/.garth). This means you won't have to enter your password every time you run the script.
 
+### Frontend
+
+`streamlit run frontend.py `
+
 ### Disclaimer
 This application uses an unofficial API. Features may change or break if Garmin updates its services. Always be cautious when using third-party applications with your personal account credentials.# garmin-fitness-tracker
