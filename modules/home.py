@@ -37,6 +37,27 @@ def render_home_page():
         points = weekly_points.get(i, 0)
         day_name = days[i]
         
+        # Fetch detailed data for tooltip
+        # We need to fetch data again or store it. 
+        # Optimization: We fetched it above but didn't store details. 
+        # Let's refactor slightly to store details in weekly_points or fetch again (fetch is fast if cached/local)
+        # For simplicity and since we have get_daily_data, let's just re-fetch or better yet, store it in the first loop.
+        # Actually, let's just fetch it here, it's local DB or cached.
+        
+        data = backend.get_daily_data(current_day_date)
+        steps = data.get("steps", 0)
+        activities = data.get("activities", [])
+        
+        # Build Tooltip Text
+        tooltip_lines = [f"Steps: {steps}"]
+        for act in activities:
+            act_type = act.get('activityType', {}).get('typeKey', 'Activity')
+            duration = act.get('duration', 0) // 60
+            avg_hr = act.get('averageHR', 0)
+            tooltip_lines.append(f"{act_type}: {duration}m (HR: {avg_hr})")
+            
+        tooltip_text = "&#10;".join(tooltip_lines) # HTML entity for newline
+        
         # Determine classes
         classes = ["activity-circle"]
         
@@ -45,7 +66,7 @@ def render_home_page():
             display_text = ""
         else:
             display_text = str(points)
-            if points > 8:
+            if points >= 8:
                 classes.append("completed")
         
         if week_goal_met:
@@ -53,7 +74,7 @@ def render_home_page():
             
         class_str = " ".join(classes)
         
-        html_content += f"""<div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;"><div class="{class_str}">{display_text}</div><div class="day-label">{day_name}</div></div>"""
+        html_content += f"""<div class="activity-circle-wrapper"><div class="{class_str}">{display_text}</div><div class="day-label">{day_name}</div><span class="tooltip-text">{tooltip_text}</span></div>"""
         
     html_content += '</div>'
     

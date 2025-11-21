@@ -37,6 +37,20 @@ if not st.session_state.logged_in:
     st.write("Enter your Garmin Connect credentials in the sidebar to continue.")
     st.stop()
 
+# Auto-sync on startup (once per session)
+if "synced" not in st.session_state:
+    status_placeholder = st.empty()
+    def update_status(msg):
+        status_placeholder.info(msg)
+    
+    with st.spinner("Syncing historical data..."):
+        backend.sync_data(update_status)
+    
+    status_placeholder.success("Sync complete!")
+    st.session_state.synced = True
+    # Rerun to refresh views with new data
+    st.rerun()
+
 # Sidebar Navigation
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Home", "Calendar"])

@@ -96,6 +96,10 @@ def get_daily_data(date: datetime.date) -> Dict[str, Any]:
             except Exception as e:
                 print(f"Error fetching steps for {date}: {e}")
         
+        # Ensure steps is not None
+        if steps is None:
+            steps = 0
+            
         return {
             "date": date,
             "steps": steps,
@@ -111,6 +115,10 @@ def calculate_points(steps: int, activities: List[Dict[str, Any]]) -> int:
     Calculates activity points based on the user's rules.
     """
     points = 0
+    
+    # Ensure steps is valid
+    if steps is None:
+        steps = 0
     
     # 1. Steps
     if steps >= 12500:
@@ -146,3 +154,56 @@ def calculate_points(steps: int, activities: List[Dict[str, Any]]) -> int:
                 points += int(duration_mins / 30) * 5
                 
     return points
+
+from modules import database
+
+# ... (existing imports)
+
+# Initialize DB on module load (or call explicitly in app)
+database.init_db()
+
+# ... (existing login, get_daily_data, calculate_points functions)
+
+def sync_data(status_callback=None):
+    """
+    Synchronizes data from Garmin Connect to local DB.
+    - If DB empty: fetch from 2025-02-01.
+    - If DB has data: fetch from latest_date + 1 day.
+    - Stops at yesterday (today's data is fetched live or handled separately).
+    """
+    latest_date = database.get_latest_date()
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
+    
+    start_date = datetime.date(2025, 2, 1)
+    if latest_date:
+        start_date = latest_date + datetime.timedelta(days=1)
+        
+    if start_date > yesterday:
+        if status_callback:
+            status_callback("Data is up to date.")
+        return
+
+    current_date = start_date
+    total_days = (yesterday - start_date).days + 1
+    processed = 0
+
+    while current_date <= yesterday:
+        if status_callback:
+            status_callback(f"Syncing {current_date} ({processed + 1}/{total_days})...")
+            
+        # Fetch data
+        data = get_daily_data(current_date)
+        
+        # Calculate points
+        points = calculate_points(data["steps"], data["activities"])
+        
+        # Save to DB
+        database.save_daily_data(current_date, data["steps"], points, data["activities"])
+        
+        current_date += datetime.timedelta(days=1)
+        processed += 1
+        
+    if status_callback:
+        status_callback("Sync complete!")
+
