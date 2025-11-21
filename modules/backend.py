@@ -139,13 +139,11 @@ def calculate_points(steps: int, activities: List[Dict[str, Any]]) -> int:
             
         duration_mins = duration_sec / 60
         
-        # Strength Training
-        if 'strength' in activity_type.lower():
-            # 8 points for every 30 mins with avg HR > 105
-            if avg_hr > 105:
-                points += int(duration_mins / 30) * 8
+        # Strength Training (Any HR) OR No HR Data
+        if 'strength' in activity_type.lower() or not avg_hr:
+            points += int(duration_mins / 30) * 8
         else:
-            # Other activities (Cardio etc)
+            # Other activities (Cardio etc) with HR data
             # 8 points for every 30 mins with avg HR > 110
             if avg_hr > 110:
                 points += int(duration_mins / 30) * 8
