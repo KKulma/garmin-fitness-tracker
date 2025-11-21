@@ -1,29 +1,30 @@
 import streamlit as st
 import datetime
+from modules import backend
 
 def render_home_page():
     st.markdown("<h1 style='text-align: center;'>Weekly Activity</h1>", unsafe_allow_html=True)
 
-    # Mock Data Generation (Replace with actual data fetching later)
-    # Assuming today is Wednesday for demo purposes if not specified
     today = datetime.date.today()
-    
-    # Calculate start of the week (Monday)
     start_of_week = today - datetime.timedelta(days=today.weekday())
     
-    # Mock points for the week
-    # Mon: 10 (Goal Met), Tue: 5 (Missed), Wed: 12 (Goal Met), Thu-Sun: Future
-    mock_data = {
-        0: 10, # Mon
-        1: 5,  # Tue
-        2: 12, # Wed
-        3: 0,  # Thu
-        4: 0,  # Fri
-        5: 0,  # Sat
-        6: 0   # Sun
-    }
+    # Fetch data for the week
+    # To optimize, we could fetch in batch if backend supported it, but loop is fine for 7 days
+    weekly_points = {}
+    
+    # Progress bar or spinner could be nice here
+    with st.spinner("Fetching weekly data..."):
+        for i in range(7):
+            day_date = start_of_week + datetime.timedelta(days=i)
+            if day_date > today:
+                weekly_points[i] = 0
+                continue
+                
+            data = backend.get_daily_data(day_date)
+            points = backend.calculate_points(data["steps"], data["activities"])
+            weekly_points[i] = points
 
-    total_weekly_points = sum(mock_data.values())
+    total_weekly_points = sum(weekly_points.values())
     week_goal_met = total_weekly_points >= 40
 
     # HTML Construction for Circles
@@ -33,7 +34,7 @@ def render_home_page():
     
     for i in range(7):
         current_day_date = start_of_week + datetime.timedelta(days=i)
-        points = mock_data.get(i, 0)
+        points = weekly_points.get(i, 0)
         day_name = days[i]
         
         # Determine classes
